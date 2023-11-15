@@ -1,10 +1,5 @@
-// const mysql = require('mysql');
-// const inquirer = require('inquirer');
-// const chalk = require('chalk');
-// const util = require("util");
 
-// tracker.mjs
-import mysql from 'mysql2/promise'; // Using the promise-based version
+import mysql from 'mysql2/promise';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import util from 'util';
