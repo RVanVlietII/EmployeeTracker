@@ -1,7 +1,6 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
-// const consoleTable = require('console.table'); // Unused import
 const util = require("util");
 
 const connection = mysql.createConnection({
@@ -15,7 +14,7 @@ const connection = mysql.createConnection({
 connection.connect(err => {
     if (err) throw err;
     console.log(' ');
-    start();
+    performAction(); // Call the function to initiate the application
 });
 
 const queryAsync = util.promisify(connection.query).bind(connection);
@@ -43,6 +42,11 @@ async function viewTable(query, columnMappings) {
     console.table(tableData);
 }
 
+// Call the start function after the user completes an action
+async function performAction() {
+    await start();
+}
+
 async function start() {
     const options = [
         'View All Departments',
@@ -62,7 +66,7 @@ async function start() {
 
     const answer = await promptUser('What would you like to do?', 'list', options);
 
-    switch (answer.selectOption) { // Fixed: Use answer.selectOption consistently
+    switch (answer) {
         case 'View All Departments':
             await viewTable('SELECT * FROM department', { id: 'ID', name: 'NAME' });
             break;
@@ -72,20 +76,15 @@ async function start() {
         case 'View All Employees':
             await viewTable('SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, role.title, role.salary, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId INNER JOIN role ON e.roleId = role.id', { id: 'ID', name: 'NAME', title: 'ROLE', salary: 'SALARY', managerName: 'MANAGER' });
             break;
+        // Add cases for other options...
         case 'Exit':
             console.log(' ');
             connection.end();
             break;
     }
 
-    start(); // Continue the loop
+    performAction(); // Continue the loop
 }
-
-
-
-// Call the start function to initiate the application
-start();
-
 
 
 
