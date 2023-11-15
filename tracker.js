@@ -258,7 +258,6 @@ async function deleteDepartment() {
 	viewDepartments();
 };
 
-// delete the role in the role table
 async function deleteRole() {
 	const res = await queryAsync('SELECT * FROM role');
 	const answer = await inquirer.prompt({
@@ -278,7 +277,7 @@ async function deleteRole() {
 	viewRoles();
 };
 
-// delete the employee in the employee table
+
 async function deleteEmployee() {
 	const res = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');	
 	const answer = await inquirer.prompt({
@@ -335,3 +334,52 @@ async function updateSalary() {
 	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Salary was updated.');
 	viewRoles();
 };
+
+
+
+
+async function updateRole() {
+	const resE = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');	
+	const answerE = await inquirer.prompt({
+		name: 'employee',
+		type: 'list',
+		message: 'Employee to Update:',
+		choices: () => {
+			const names = [];
+			for (let i of resE) {
+				names.push(i.employeeName);
+			}
+			return names;
+		}
+	});
+	const resR = await queryAsync('SELECT * FROM role');	
+	const answerR = await inquirer.prompt({
+		name: 'role',
+		type: 'list',
+		message: 'New Role:',
+		choices: () => {
+			const roles = [];
+			for (let i of resR) {
+				roles.push(i.title);
+			}
+			return roles;
+		}
+	});	
+	const select = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, role.title FROM employee INNER JOIN role ON employee.roleId = role.id');	
+	let employeeId;	
+	for (let i of select) {
+		if (i.employeeName === answerE.employee) {
+			employeeId = i.id;
+		}
+	}	
+	let newRoleId;
+	for (let i of resR) {
+		if (i.title === answerR.role) {
+			newRoleId = i.id;
+		}
+	}
+	await queryAsync('UPDATE employee SET roleId = ? WHERE id = ?', [newRoleId, employeeId]);	
+	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Role was updated.');
+	viewEmployees();
+};
+
