@@ -112,3 +112,14 @@ async function viewRoles() {
     start();
 };
 
+
+async function viewEmployees() {	
+	const res = await queryAsync('SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, role.title, role.salary, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId INNER JOIN role ON e.roleId = role.id');
+	const allEmployees = [];
+	console.log(' ');
+    for (let i of res) {   
+	    allEmployees.push({ ID: i.id, NAME: i.employeeName, ROLE: i.title, SALARY: i.salary, MANAGER: i.managerName });
+    }
+	console.table(allEmployees);
+    start();
+};
