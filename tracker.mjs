@@ -2,53 +2,13 @@
 import mysql from 'mysql2/promise';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import util from 'util';
 
-
-
-const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'toor',
-    database: process.env.DB_NAME || 'employeeDB'
-});
-
-
-console.log(' ');
-performAction();
-
-const queryAsync = util.promisify(connection.query).bind(connection);
-
-async function promptUser(message, type, choices) {
-    const answer = await inquirer.prompt({
-        name: 'userInput',
-        type,
-        message,
-        choices,
-    });
-    return answer.userInput;
+async function performAction(connection) {
+    await start(connection);
 }
 
-async function viewTable(query, columnMappings) {
-    const res = await queryAsync(query);
-    const tableData = res.map(row => {
-        const rowData = {};
-        for (const key in columnMappings) {
-            rowData[columnMappings[key]] = row[key];
-        }
-        return rowData;
-    });
-    console.log(' ');
-    console.table(tableData);
-}
 
-// Call the start function after the user completes an action
-async function performAction() {
-    await start();
-}
-
-async function start() {
+async function start(connection) {
     const options = [
         'View All Departments',
         'View All Roles',
@@ -69,28 +29,87 @@ async function start() {
 
     switch (answer) {
         case 'View All Departments':
-            await viewTable('SELECT * FROM department', { id: 'ID', name: 'NAME' });
+            await viewTable(connection, 'SELECT * FROM department', { id: 'ID', name: 'NAME' });
             break;
         case 'View All Roles':
-            await viewTable('SELECT role.id, role.title, role.salary, department.name FROM role INNER JOIN department ON role.departmentId = department.id', { id: 'ID', title: 'TITLE', salary: 'SALARY', name: 'DEPARTMENT' });
+            await viewTable(connection, 'SELECT role.id, role.title, role.salary, department.name FROM role INNER JOIN department ON role.departmentId = department.id', { id: 'ID', title: 'TITLE', salary: 'SALARY', name: 'DEPARTMENT' });
             break;
         case 'View All Employees':
-            await viewTable('SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, role.title, role.salary, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId INNER JOIN role ON e.roleId = role.id', { id: 'ID', name: 'NAME', title: 'ROLE', salary: 'SALARY', managerName: 'MANAGER' });
+            await viewTable(connection, 'SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, role.title, role.salary, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId INNER JOIN role ON e.roleId = role.id', { id: 'ID', name: 'NAME', title: 'ROLE', salary: 'SALARY', managerName: 'MANAGER' });
             break;
-        // Add cases for other options...
         case 'Exit':
             console.log(' ');
             connection.end();
             break;
     }
 
-    performAction(); // Continue the loop
+    await performAction(connection); 
+}
+
+async function promptUser(message, type, choices) {
+    const answer = await inquirer.prompt({
+        name: 'userInput',
+        type,
+        message,
+        choices,
+    });
+    return answer.userInput;
+}
+
+
+async function queryAsync(connection, query, values = []) {
+    try {
+        const [rows] = await connection.query(query, values);
+        return rows;
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+async function viewTable(connection, query, columnMappings) {
+    try {
+        const res = await queryAsync(connection, query);
+        const tableData = res.map(row => {
+            const rowData = {};
+            for (const key in columnMappings) {
+                rowData[columnMappings[key]] = row[key];
+            }
+            return rowData;
+        });
+        console.log(' ');
+        console.table(tableData);
+    } catch (error) {
+        console.error('Error viewing table:', error);
+    }
 }
 
 
 
+
+async function main() {
+    try {
+        // Create a database connection
+        const connection = await mysql.createConnection({
+            host: 'localhost',
+            port: 3306,
+            user: 'root',
+            password: 'toor',
+            database: 'employeeDB'
+        });
+
+        console.log(' ');
+        await performAction(connection); // Start the application
+    } catch (error) {
+        console.error('Error connecting to the database:', error);
+    }
+}
+
+// Start the main function
+main();
+
 async function viewDepartments() {
-	const res = await queryAsync('SELECT * FROM department');
+	const res = await queryAsync(connection, 'SELECT * FROM department');
 	const allDepartments = [];
 	console.log(' ');
     for (let i of res) {
@@ -102,7 +121,7 @@ async function viewDepartments() {
 
 
 async function viewRoles() {
-	const res = await queryAsync('SELECT role.id, role.title, role.salary, department.name FROM role INNER JOIN department ON role.departmentId = department.id');
+	const res = await queryAsync(connection, 'SELECT role.id, role.title, role.salary, department.name FROM role INNER JOIN department ON role.departmentId = department.id');
 	const allRoles = [];
     console.log(' ');
     for (let i of res) {
@@ -114,7 +133,7 @@ async function viewRoles() {
 
 
 async function viewEmployees() {	
-	const res = await queryAsync('SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, role.title, role.salary, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId INNER JOIN role ON e.roleId = role.id');
+	const res = await queryAsync(connection, 'SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, role.title, role.salary, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId INNER JOIN role ON e.roleId = role.id');
 	const allEmployees = [];
 	console.log(' ');
     for (let i of res) {   
@@ -140,7 +159,7 @@ async function addDepartment() {
 
 
 async function addRole() {
-	const res = await queryAsync('SELECT * FROM department');	
+	const res = await queryAsync(connection, 'SELECT * FROM department');	
 	const answer = await inquirer.prompt([
 		{
 			name: 'role',
@@ -183,7 +202,7 @@ async function addRole() {
 
 
 async function addEmployee() {
-	const resR = await queryAsync('SELECT * FROM role');
+	const resR = await queryAsync(connection, 'SELECT * FROM role');
 	const answerR = await inquirer.prompt([
 		{
 			name: 'firstName',
@@ -208,7 +227,7 @@ async function addEmployee() {
 			}
 		}
 	]);	
-	const resE = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');
+	const resE = await queryAsync(connection, 'SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');
 	const answerE = await inquirer.prompt({
 		name: 'employee',
 		type: 'list',
@@ -240,7 +259,7 @@ async function addEmployee() {
 
 
 async function deleteDepartment() {
-	const res = await queryAsync('SELECT * FROM department');
+	const res = await queryAsync(connection, 'SELECT * FROM department');
 	const answer = await inquirer.prompt({
 		name: 'department',
 		type: 'list',
@@ -259,7 +278,7 @@ async function deleteDepartment() {
 };
 
 async function deleteRole() {
-	const res = await queryAsync('SELECT * FROM role');
+	const res = await queryAsync(connection, 'SELECT * FROM role');
 	const answer = await inquirer.prompt({
 		name: 'role',
 		type: 'list',
@@ -279,7 +298,7 @@ async function deleteRole() {
 
 
 async function deleteEmployee() {
-	const res = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');	
+	const res = await queryAsync(connection, 'SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');	
 	const answer = await inquirer.prompt({
 		name: 'employee',
 		type: 'list',
@@ -306,7 +325,7 @@ async function deleteEmployee() {
 
 
 async function updateSalary() {
-	const res = await queryAsync('SELECT * FROM role');	
+	const res = await queryAsync(connection, 'SELECT * FROM role');	
 	const answer = await inquirer.prompt([
 		{
 			name: 'title',
@@ -339,7 +358,7 @@ async function updateSalary() {
 
 
 async function updateRole() {
-	const resE = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');	
+	const resE = await queryAsync(connection, 'SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');	
 	const answerE = await inquirer.prompt({
 		name: 'employee',
 		type: 'list',
@@ -365,7 +384,7 @@ async function updateRole() {
 			return roles;
 		}
 	});	
-	const select = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, role.title FROM employee INNER JOIN role ON employee.roleId = role.id');	
+	const select = await queryAsync(connection, 'SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, role.title FROM employee INNER JOIN role ON employee.roleId = role.id');	
 	let employeeId;	
 	for (let i of select) {
 		if (i.employeeName === answerE.employee) {
@@ -385,7 +404,7 @@ async function updateRole() {
 
 
 async function updateManager() {
-	const res = await queryAsync('SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, e.managerId, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId');	
+	const res = await queryAsync(connection, 'SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, e.managerId, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId');	
 	const answer = await inquirer.prompt([
 		{
 			name: 'employee',
