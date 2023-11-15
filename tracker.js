@@ -179,3 +179,61 @@ async function addRole() {
 	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Role was added.');
 	viewRoles();
 };
+
+
+
+async function addEmployee() {
+	const resR = await queryAsync('SELECT * FROM role');
+	const answerR = await inquirer.prompt([
+		{
+			name: 'firstName',
+			type: 'input',
+			message: 'First Name:'
+		},
+		{
+			name: 'lastName',
+			type: 'input',
+			message: 'Last Name:'
+		},	
+		{
+			name: 'role',
+			type: 'list',
+			message: 'Role:',
+			choices: () => {
+				const roles = [];
+				for (let i of resR) {
+					roles.push(i.title);
+				}
+				return roles;
+			}
+		}
+	]);	
+	const resE = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');
+	const answerE = await inquirer.prompt({
+		name: 'employee',
+		type: 'list',
+		message: 'Manager:',
+		choices: () => {
+			const names = ['None'];
+			for (let i of resE) {
+				names.push(i.employeeName);
+			}
+			return names;
+		}
+	});	
+	let roleId;
+	for (let i of resR) {
+		if (i.title === answerR.role) {
+			roleId = i.id;
+  		}
+	}	
+	let managerId;
+	for (let i of resE) {
+		if (i.employeeName === answerE.employee) {
+			managerId = i.id;
+		}
+	}	
+	await queryAsync('INSERT INTO employee SET ?', { firstName: answerR.firstName, lastName: answerR.lastName, roleId: roleId, managerId: managerId});
+	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Employee was added.');
+	viewEmployees();
+};
