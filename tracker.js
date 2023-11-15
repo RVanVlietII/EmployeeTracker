@@ -237,3 +237,101 @@ async function addEmployee() {
 	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Employee was added.');
 	viewEmployees();
 };
+
+
+async function deleteDepartment() {
+	const res = await queryAsync('SELECT * FROM department');
+	const answer = await inquirer.prompt({
+		name: 'department',
+		type: 'list',
+		message: 'Department to Delete:',
+		choices: () => {
+			const departments = [];
+			for (let i of res) {
+				departments.push(i.name);
+			}
+			return departments;
+		}
+	});
+	await queryAsync('DELETE FROM department WHERE ?', { name: answer.department });
+	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Department was deleted.');
+	viewDepartments();
+};
+
+// delete the role in the role table
+async function deleteRole() {
+	const res = await queryAsync('SELECT * FROM role');
+	const answer = await inquirer.prompt({
+		name: 'role',
+		type: 'list',
+		message: 'Role to Delete:',
+		choices: () => {
+			const roles = [];
+			for (let i of res) {
+				roles.push(i.title);
+			}
+			return roles;
+		}
+	});		
+	await queryAsync('DELETE FROM role WHERE ?', { title: answer.role });
+	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Role was deleted.');
+	viewRoles();
+};
+
+// delete the employee in the employee table
+async function deleteEmployee() {
+	const res = await queryAsync('SELECT employee.id, CONCAT(employee.firstName, " ", employee.lastName) AS employeeName, employee.roleId, employee.managerId FROM employee');	
+	const answer = await inquirer.prompt({
+		name: 'employee',
+		type: 'list',
+		message: 'Employee to Delete:',
+		choices: () => {
+			const names = [];
+			for (let i of res) {
+				names.push(i.employeeName);
+			}
+			return names;
+		}
+	});		
+	let deleteId;	
+	for (let i of res) {
+		if (i.employeeName === answer.employee) {
+			deleteId = i.id;
+		}
+	}		
+	await queryAsync('DELETE FROM employee WHERE ?', { id: deleteId });
+	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Employee was deleted.');
+	viewEmployees();
+};
+
+
+
+async function updateSalary() {
+	const res = await queryAsync('SELECT * FROM role');	
+	const answer = await inquirer.prompt([
+		{
+			name: 'title',
+			type: 'list',
+			message: 'Role:',
+			choices: () => {
+				const roles = [];
+				for (let i of res) {
+					roles.push(i.title);
+				}
+				return roles;
+			}
+		},
+		{
+			name: 'salary',
+			type: 'input',
+			message: 'New Salary:',
+			validate: value => {
+			  if (isNaN(value) === false) return true;
+			  return false;
+			}
+		}
+	]);				
+	await queryAsync('UPDATE role SET salary = ? WHERE title = ?', [answer.salary, answer.title]);	
+	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Salary was updated.');
+	viewRoles();
+};
