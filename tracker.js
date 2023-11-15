@@ -123,3 +123,15 @@ async function viewEmployees() {
 	console.table(allEmployees);
     start();
 };
+
+
+async function addDepartment() {
+	const answer = await inquirer.prompt({
+		name: 'departmentName',
+		type: 'input',
+		message: 'Department Name:'
+	});	
+	await queryAsync('INSERT INTO department SET ?', { name: answer.departmentName });
+	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Department was added.');
+	viewDepartments();
+};
