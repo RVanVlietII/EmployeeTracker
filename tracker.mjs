@@ -19,11 +19,7 @@ const connection = await mysql.createConnection({
     database: process.env.DB_NAME || 'employeeDB'
 });
 
-// connection.connect(err => {
-//     if (err) throw err;
-//     console.log(' ');
-//     performAction(); // Call the function to initiate the application
-// });
+
 console.log(' ');
 performAction();
 
