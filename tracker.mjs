@@ -1,9 +1,17 @@
-const mysql = require('mysql');
-const inquirer = require('inquirer');
-const chalk = require('chalk');
-const util = require("util");
+// const mysql = require('mysql');
+// const inquirer = require('inquirer');
+// const chalk = require('chalk');
+// const util = require("util");
 
-const connection = mysql.createConnection({
+// tracker.mjs
+import mysql from 'mysql2/promise'; // Using the promise-based version
+import inquirer from 'inquirer';
+import chalk from 'chalk';
+import util from 'util';
+
+
+
+const connection = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 'root',
@@ -11,11 +19,13 @@ const connection = mysql.createConnection({
     database: process.env.DB_NAME || 'employeeDB'
 });
 
-connection.connect(err => {
-    if (err) throw err;
-    console.log(' ');
-    performAction(); // Call the function to initiate the application
-});
+// connection.connect(err => {
+//     if (err) throw err;
+//     console.log(' ');
+//     performAction(); // Call the function to initiate the application
+// });
+console.log(' ');
+performAction();
 
 const queryAsync = util.promisify(connection.query).bind(connection);
 
