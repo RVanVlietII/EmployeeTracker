@@ -72,7 +72,6 @@ async function start() {
         case 'View All Employees':
             await viewTable('SELECT e.id, CONCAT(e.firstName, " ", e.lastName) AS employeeName, role.title, role.salary, CONCAT(m.firstName, " ", m.lastName) AS managerName FROM employee e LEFT JOIN employee m ON m.id = e.managerId INNER JOIN role ON e.roleId = role.id', { id: 'ID', name: 'NAME', title: 'ROLE', salary: 'SALARY', managerName: 'MANAGER' });
             break;
-        // Add cases for other options...
         case 'Exit':
             console.log(' ');
             connection.end();
@@ -82,15 +81,14 @@ async function start() {
     start(); // Continue the loop
 }
 
-// Add other functions (addDepartment, addRole, viewRoles, viewEmployees, etc.) similarly refactored.
+
 
 // Call the start function to initiate the application
 start();
 
-// Add other functions (addDepartment, addRole, viewRoles, viewEmployees, etc.) similarly refactored.
 
 
-//// console.table everything in the department table
+
 async function viewDepartments() {
 	const res = await queryAsync('SELECT * FROM department');
 	const allDepartments = [];
@@ -101,3 +99,16 @@ async function viewDepartments() {
     console.table(allDepartments);
     start();
 };
+
+
+async function viewRoles() {
+	const res = await queryAsync('SELECT role.id, role.title, role.salary, department.name FROM role INNER JOIN department ON role.departmentId = department.id');
+	const allRoles = [];
+    console.log(' ');
+    for (let i of res) {
+	    allRoles.push({ ID: i.id, TITLE: i.title, SALARY: i.salary, DEPARTMENT: i.name });
+    }
+    console.table(allRoles);
+    start();
+};
+
