@@ -60,6 +60,7 @@ async function promptUser(message, type, choices) {
 async function queryAsync(connection, query, values = []) {
     try {
         const [rows] = await connection.query(query, values);
+		console.log(rows);
         return rows;
     } catch (error) {
         throw error;
@@ -99,7 +100,7 @@ async function main() {
         });
 
         console.log(' ');
-        await performAction(connection); // Start the application
+        await start(connection); // Start the application
     } catch (error) {
         console.error('Error connecting to the database:', error);
     }
