@@ -135,3 +135,47 @@ async function addDepartment() {
 	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Department was added.');
 	viewDepartments();
 };
+
+
+
+
+async function addRole() {
+	const res = await queryAsync('SELECT * FROM department');	
+	const answer = await inquirer.prompt([
+		{
+			name: 'role',
+			type: 'input',
+			message: 'Role Name:'
+		},
+		{
+			name: 'salary',
+			type: 'input',
+			message: 'Salary:',
+			validate: value => {
+			  if (isNaN(value) === false) return true;
+			  return false;
+			}
+		},
+		{
+			name: 'department',
+			type: 'list',
+			message: 'Department:',
+			choices: () => {
+				const departments = [];
+				for (let i of res) {
+					departments.push(i.name);
+				}
+				return departments;
+			}
+		}
+	]);
+	let departmentId;
+	for (let i of res) {
+		if (i.name === answer.department) {
+			departmentId = i.id;
+  		}
+	}  	      	
+	await queryAsync('INSERT INTO role SET ?', { title: answer.role, salary: answer.salary, departmentId: departmentId });
+	console.log(chalk.bold.bgCyan('\nSUCCESS:'), 'Role was added.');
+	viewRoles();
+};
