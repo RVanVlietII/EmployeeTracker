@@ -90,4 +90,14 @@ start();
 // Add other functions (addDepartment, addRole, viewRoles, viewEmployees, etc.) similarly refactored.
 
 
-// 
+//// console.table everything in the department table
+async function viewDepartments() {
+	const res = await queryAsync('SELECT * FROM department');
+	const allDepartments = [];
+	console.log(' ');
+    for (let i of res) {
+	    allDepartments.push({ ID: i.id, NAME: i.name });
+    }
+    console.table(allDepartments);
+    start();
+};
